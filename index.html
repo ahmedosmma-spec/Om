@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Omar & Mona | From Omar To Mona</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==================== 1. RESET & PERFORMANCE (60FPS) ==================== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Cairo', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #05040a;
+      color: #ffffff;
+      overflow-x: hidden;
+      min-height: 100vh;
+      width: 100vw;
+    }
+
+    #bg-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .section {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px 15px;
+      text-align: center;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform, opacity;
+    }
+
+    .hidden {
+      display: none !important;
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 0, 127, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+      margin: 12px 0;
+      width: 100%;
+      max-width: 500px;
+      will-change: transform;
+    }
+
+    .btn-neon {
+      background: linear-gradient(45deg, #ff007f, #8a2be2);
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(255, 0, 127, 0.5);
+      animation: pulse 2s infinite ease-in-out;
+      margin-top: 20px;
+      text-decoration: none;
+      display: inline-block;
+      touch-action: manipulation;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.04); }
+    }
+
+    .audio-btn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      z-index: 999;
+      background: rgba(255, 0, 127, 0.2);
+      border: 1px solid #ff007f;
+      color: #fff;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 0 12px rgba(255, 0, 127, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logo-hero {
+      font-size: 3.2rem;
+      font-weight: 900;
+      color: #ff007f;
+      text-shadow: 0 0 20px #ff007f, 0 0 40px #8a2be2;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #ff007f, #8a2be2, #ffd700);
+      transition: width 0.1s linear;
+    }
+
+    .counter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 400px;
+      margin: 15px 0;
+    }
+
+    .counter-box {
+      background: rgba(138, 43, 226, 0.15);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      padding: 15px;
+      border-radius: 15px;
+    }
+
+    .counter-val {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      width: 100%;
+      max-width: 500px;
+      margin: 15px 0;
+    }
+
+    .flip-card {
+      height: 150px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+    }
+
+    .flip-card.flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-front, .flip-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 15px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .flip-front {
+      background: rgba(255, 0, 127, 0.15);
+      border: 1px solid #ff007f;
+    }
+
+    .flip-back {
+      background: rgba(138, 43, 226, 0.3);
+      border: 1px solid #ffd700;
+      transform: rotateY(180deg);
+    }
+
+    #stars-sky {
+      position: relative;
+      width: 100%;
+      height: 45vh;
+      max-width: 500px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      overflow: hidden;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .interactive-star {
+      position: absolute;
+      font-size: 1.5rem;
+      cursor: pointer;
+      filter: drop-shadow(0 0 8px #ffd700);
+      padding: 10px;
+      transition: transform 0.2s;
+    }
+
+    .interactive-star:active {
+      transform: scale(1.4);
+    }
+
+    #final-blackout {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: #000000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 2s ease;
+    }
+
+    #final-blackout.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .beating-heart {
+      font-size: 5rem;
+      color: #ff007f;
+      text-shadow: 0 0 30px #ff007f, 0 0 60px #8a2be2;
+      animation: heartBeat 1.2s infinite ease-in-out;
+      margin-bottom: 20px;
+    }
+
+    @keyframes heartBeat {
+      0% { transform: scale(1); }
+      14% { transform: scale(1.2); }
+      28% { transform: scale(1); }
+      42% { transform: scale(1.2); }
+      70% { transform: scale(1); }
+    }
+
+    .final-text-line {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #ffffff;
+      margin: 8px 0;
+      opacity: 0;
+      transition: opacity 1.5s ease;
+    }
+
+    .credits-box span { color: #ff007f; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <canvas id="bg-canvas"></canvas>
+
+  <button class="audio-btn" onclick="openMusic()" aria-label="Music">🎵</button>
+
+  <!-- ==================== STAGE 1: LOADER ==================== -->
+  <section class="section" id="loader-stage">
+    <div class="logo-hero">O ❤️ M</div>
+    <div style="color: #dcdde1; margin-bottom: 15px;" id="sub-hero-text"></div>
+    <div class="glass-card">
+      <p style="color: #ffd700; margin-bottom: 10px;">دي مش مجرد صفحة…<br>دي حكاية بدأت يوم 26 Apr 2026 ❤️</p>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="p-bar"></div>
+      </div>
+      <p style="font-size: 0.85rem; color: #a4b0be;" id="p-text">0% - جاري تجهيز مفاجأة صغيرة…</p>
+    </div>
+  </section>
+
+  <!-- ==================== STAGE 2: HERO ==================== -->
+  <section class="section hidden" id="hero-stage">
+    <div class="glass-card">
+      <h2 style="color: #ffd700; font-size: 1.8rem; margin-bottom: 15px;">إلى منا... ❤️</h2>
+      <p id="hero-msg-text" style="line-height: 1.8; font-size: 1rem; min-height: 80px;"></p>
+    </div>
+    <button class="btn-neon" onclick="goToStage('counter-stage')">ابدأي رحلتنا ✨</button>
+  </section>
+
+  <!-- ==================== STAGE 3: COUNTER ==================== -->
+  <section class="section hidden" id="counter-stage">
+    <h2 style="color: #ff007f; margin-bottom: 5px;">❤️ عداد رحلتنا</h2>
+    <p style="color: #dcdde1; font-size: 0.9rem;">بداية الحكاية: 26 Apr 2026 (9:30 PM)</p>
+
+    <div class="counter-grid">
+      <div class="counter-box"><div class="counter-val" id="c-days">0</div><div style="font-size:0.8rem;">أيام</div></div>
+      <div class="counter-box"><div class="counter-val" id="c-hours">0</div><div style="font-size:0.8rem;">ساعات</div></div>
+      <div class="counter-box"><div class="counter-val" id="c-mins">0</div><div style="font-size:0.8rem;">دقائق</div></div>
+      <div class="counter-box"><div class="counter-val" id="c-secs">0</div><div style="font-size:0.8rem;">ثواني</div></div>
+    </div>
+
+    <p style="color: #ffd700; font-size: 0.95rem;">كل ثانية بتعدي بتخليني أحبك أكتر. ❤</p>
+    <button class="btn-neon" onclick="goToStage('timeline-stage')">كملي رحلتنا 📜</button>
+  </section>
+
+  <!-- ==================== STAGE 4: TIMELINE ==================== -->
+  <section class="section hidden" id="timeline-stage">
+    <h2 style="color: #ffd700; font-size: 1.8rem; margin-bottom: 5px;">قصتنا ❤️</h2>
+    <p style="color: #a4b0be; font-size: 0.85rem; margin-bottom: 15px;">كل قصة جميلة بتبدأ بلحظة… ودي كانت أول لحظة بينا.</p>
+
+    <div class="glass-card" style="text-align: right;">
+      <h3 style="color: #ff007f;">📅 26 Apr 2026</h3>
+      <h4 style="color: #ffd700; margin: 5px 0;">🌟 أول مرة عرفتك</h4>
+      <p style="font-size: 0.9rem; line-height: 1.6;">اليوم ده كان بداية كل حاجة… من اليوم ده بدأت أحس إنك شخص مميز جداً في حياتي.</p>
+    </div>
+
+    <div class="glass-card" style="text-align: right;">
+      <h3 style="color: #ff007f;">❤️ 27 Apr 2026 (9:30 PM)</h3>
+      <h4 style="color: #ffd700; margin: 5px 0;">💌 الوقت اللي اعترفتلك فيه</h4>
+      <p style="font-size: 0.9rem; line-height: 1.6;">الساعة كانت 9:30 بالظبط لما قررت أقولك اللي جوايا، ولحظتها الدنيا كلها اتغيرت.</p>
+    </div>
+
+    <button class="btn-neon" onclick="goToStage('letter-stage')">💌 افتحي الرسالة</button>
+  </section>
+
+  <!-- ==================== STAGE 5: LETTER ==================== -->
+  <section class="section hidden" id="letter-stage">
+    <div class="glass-card" style="text-align: right;">
+      <h2 style="color: #ff007f; text-align: center; margin-bottom: 15px;">رسالة ليكي يا Mona ❤️</h2>
+      <div id="typewriter-letter" style="line-height: 1.8; font-size: 0.95rem; white-space: pre-line;"></div>
+      <p style="text-align: left; color: #ffd700; font-weight: bold; margin-top: 10px;">— Omar</p>
+    </div>
+    <button class="btn-neon" onclick="goToStage('reasons-stage')">🌹 اكتشفي ليه بحبك</button>
+  </section>
+
+  <!-- ==================== STAGE 6: REASONS ==================== -->
+  <section class="section hidden" id="reasons-stage">
+    <h2 style="color: #ffd700; margin-bottom: 15px;">ليه بحبك؟ ❤️</h2>
+
+    <div class="cards-grid">
+      <div class="flip-card" onclick="flip(this)">
+        <div class="flip-card-inner">
+          <div class="flip-front"><h3>✨ 1</h3></div>
+          <div class="flip-back"><h4 style="color: #ffd700;">😊 ابتسامتك</h4><p style="font-size: 0.75rem;">بتغير يومي للأحسن.</p></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="flip(this)">
+        <div class="flip-card-inner">
+          <div class="flip-front"><h3>✨ 2</h3></div>
+          <div class="flip-back"><h4 style="color: #ffd700;">🤍 وجودك</h4><p style="font-size: 0.75rem;">بيديني راحة وسعادة.</p></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="flip(this)">
+        <div class="flip-card-inner">
+          <div class="flip-front"><h3>✨ 3</h3></div>
+          <div class="flip-back"><h4 style="color: #ffd700;">🌙 شخصيتك</h4><p style="font-size: 0.75rem;">بتميزك عن أي حد.</p></div>
+        </div>
+      </div>
+
+      <div class="flip-card" onclick="flip(this)">
+        <div class="flip-card-inner">
+          <div class="flip-front"><h3>✨ 4</h3></div>
+          <div class="flip-back"><h4 style="color: #ffd700;">⭐ لأنك Mona</h4><p style="font-size: 0.75rem;">كفاية إنك Mona ❤️</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="gift-box" class="glass-card hidden" style="border-color: #ffd700;">
+      <h3 style="color: #ffd700; margin-bottom: 5px;">🎁 رسالة مفاجأة</h3>
+      <p style="font-size: 0.85rem; line-height: 1.6;">لو وصلتي لحد هنا، فأنتِ عرفتي قد إيه وجودك غالي عندي. أتمنى كل مرة تفتحي فيها الموقع ده تفتكري إن فيه حد عمله مخصوص علشان يفرحك. ❤</p>
+    </div>
+
+    <button class="btn-neon" onclick="goToStage('stars-stage')">🌌 كملي للمفاجأة الأخيرة</button>
+  </section>
+
+  <!-- ==================== STAGE 7: STARS SKY ==================== -->
+  <section class="section hidden" id="stars-stage">
+    <h2 style="color: #ffd700; margin-bottom: 5px;">🌌 Star Wishes</h2>
+    <p id="star-instruction" style="color: #a4b0be; font-size: 0.85rem; margin-bottom: 10px;">إلمسي النجوم واكتشفي رسائلك… ✨</p>
+
+    <div id="stars-sky"></div>
+
+    <div class="glass-card credits-box" style="text-align: right; font-size: 0.8rem; margin-top: 15px;">
+      <h4 style="color: #ffd700; text-align: center; margin-bottom: 5px;">👑 حقوق العمل والإبداع</h4>
+      <p>البرمجة والتصميم والتأليف: <span>Fox</span></p>
+      <p>الفكرة: <span>Omar</span></p>
+    </div>
+  </section>
+
+  <!-- ==================== STAGE 8 & 9: BLACKOUT END SCENE ==================== -->
+  <div id="final-blackout">
+    <div class="beating-heart">❤️</div>
+    <div class="final-text-line" id="line1" style="color: #ff007f;">O ❤️ M</div>
+    <div class="final-text-line" id="line2" style="font-size: 1.2rem;">From Omar To Mona</div>
+    <div class="final-text-line" id="line3" style="color: #ffd700; font-size: 1rem; margin-top: 10px;">Forever.</div>
+  </div>
+
+  <script>
+    function openMusic() {
+      window.open('https://www.youtube.com/results?search_query=romantic+song', '_blank');
+    }
+
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const stars = Array.from({length: 70}, () => ({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: Math.random() * 1.5,
+      a: Math.random(),
+      s: Math.random() * 0.02
+    }));
+
+    let heartRain = [];
+
+    function createHeartRain() {
+      for(let i = 0; i < 25; i++) {
+        heartRain.push({
+          x: Math.random() * window.innerWidth,
+          y: -20,
+          speed: Math.random() * 3 + 2,
+          size: Math.random() * 15 + 10,
+          alpha: 1
+        });
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = "#fff";
+      stars.forEach(st => {
+        st.a += st.s;
+        if(st.a > 1 || st.a < 0) st.s = -st.s;
+        ctx.globalAlpha = Math.abs(st.a);
+        ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, Math.PI*2); ctx.fill();
+      });
+
+      heartRain.forEach((h, idx) => {
+        h.y += h.speed;
+        ctx.globalAlpha = h.alpha;
+        ctx.font = `${h.size}px serif`;
+        ctx.fillText('❤️', h.x, h.y);
+
+        if(h.y > window.innerHeight) heartRain.splice(idx, 1);
+      });
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+
+    function goToStage(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(id).classList.remove('hidden');
+      if(id === 'hero-stage') startTypewriterHero();
+      if(id === 'letter-stage') startTypewriterLetter();
+      if(id === 'stars-stage') initStars();
+    }
+
+    const subHeroText = "From Omar To Mona";
+    let subIdx = 0;
+    function typeSubHero() {
+      if(subIdx < subHeroText.length) {
+        document.getElementById('sub-hero-text').innerHTML += subHeroText.charAt(subIdx++);
+        setTimeout(typeSubHero, 70);
+      }
+    }
+    typeSubHero();
+
+    let p = 0;
+    const lInt = setInterval(() => {
+      p += 3;
+      if(p >= 100) {
+        p = 100; clearInterval(lInt);
+        setTimeout(() => goToStage('hero-stage'), 500);
+      }
+      document.getElementById('p-bar').style.width = p + '%';
+      document.getElementById('p-text').innerText = p + '% - جاري التجهيز...';
+    }, 70);
+
+    function startTypewriterHero() {
+      const msg = "يمكن الكلمات متقدرش توصف كل اللي جوايا، بس حبيت أعمل المكان ده مخصوص ليكي. كل لحظة بدأت من 26 Apr 2026 كانت بداية حكاية جميلة. ❤️";
+      let i = 0; const el = document.getElementById('hero-msg-text'); el.innerHTML = "";
+      function t() { if(i < msg.length) { el.innerHTML += msg.charAt(i++); setTimeout(t, 40); } } t();
+    }
+
+    function startTypewriterLetter() {
+      const letter = `إلى Mona… ❤️\n\nمن يوم 26 Apr 2026 وأنا حاسس إن حياتي بقت مختلفة.\nويوم 27 Apr 2026 الساعة 9:30 مساءً بالظبط، كان من أكتر الأوقات اللي مش هنساها في حياتي، لأن ده الوقت اللي اعترفتلك فيه بكل حاجة.\n\nشكراً على كل لحظة، وكل ضحكة، وكل إحساس جميل دخل حياتي بسببك.\nأتمنى إن كل يوم يعدي يبقى أحسن من اللي قبله.\n\nبحبك يا Mona. ❤️`;
+      let i = 0; const el = document.getElementById('typewriter-letter'); el.innerHTML = "";
+      function t() { if(i < letter.length) { el.innerHTML += letter.charAt(i++); setTimeout(t, 30); } } t();
+    }
+
+    /* Love Counter (Starts 26 Apr 2026, 21:30) */
+    const startD = new Date('2026-04-26T21:30:00');
+    setInterval(() => {
+      const diff = new Date() - startD;
+      document.getElementById('c-days').innerText = Math.max(0, Math.floor(diff / 86400000));
+      document.getElementById('c-hours').innerText = Math.max(0, Math.floor((diff / 3600000) % 24));
+      document.getElementById('c-mins').innerText = Math.max(0, Math.floor((diff / 60000) % 60));
+      document.getElementById('c-secs').innerText = Math.max(0, Math.floor((diff / 1000) % 60));
+    }, 1000);
+
+    let fCount = 0;
+    function flip(c) {
+      if(!c.classList.contains('flipped')) {
+        c.classList.add('flipped');
+        if(++fCount >= 4) document.getElementById('gift-box').classList.remove('hidden');
+      }
+    }
+
+    let sCount = 0;
+    function initStars() {
+      const sky = document.getElementById('stars-sky'); sky.innerHTML = ""; sCount = 0;
+      const wishes = ["وجودك فرق معايا. ❤️", "ابتسامتك أجمل حاجة.", "ربنا يديمك في حياتي.", "بحب كل تفاصيلك."];
+      
+      for(let i=0; i<8; i++) {
+        const st = document.createElement('div');
+        st.className = 'interactive-star'; st.innerText = '⭐';
+        st.style.top = Math.random()*75 + 10 + '%'; st.style.left = Math.random()*75 + 10 + '%';
+        st.onclick = () => {
+          alert(wishes[i % wishes.length]);
+          st.style.opacity = '0.2'; st.style.pointerEvents = 'none';
+          if(++sCount >= 5) triggerFinalBlackout();
+        };
+        sky.appendChild(st);
+      }
+    }
+
+    function triggerFinalBlackout() {
+      const blackout = document.getElementById('final-blackout');
+      blackout.classList.add('active');
+
+      setTimeout(() => { document.getElementById('line1').style.opacity = '1'; }, 1000);
+      setTimeout(() => { document.getElementById('line2').style.opacity = '1'; }, 2500);
+      setTimeout(() => { document.getElementById('line3').style.opacity = '1'; }, 4000);
+    }
+
+    setTimeout(() => {
+      alert("شكراً إنك وصلتي لآخر الرحلة ❤️");
+      createHeartRain();
+      const rainInt = setInterval(createHeartRain, 500);
+      setTimeout(() => clearInterval(rainInt), 5000);
+    }, 60000);
+  </script>
+</body>
+</html>
